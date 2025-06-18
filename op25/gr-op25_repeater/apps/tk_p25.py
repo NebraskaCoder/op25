@@ -1414,7 +1414,7 @@ class p25_system(object):
 
     def update_voice_frequency(self, frequency, tgid=None, tdma_slot=None, srcaddr=None, svcopts=None):
         sys.stderr.write(f"[DEBUG] ENTER update_voice_frequency: freq={frequency}, tgid={tgid}, tdma_slot={tdma_slot}, srcaddr={srcaddr}\n")
-        if not frequency:    # e.g., channel identifier not yet known
+        if not frequency:
             return
         prev_freq, prev_slot = self.find_voice_freq(tgid)
         self.update_talkgroups(frequency, tgid, tdma_slot, srcaddr, svcopts)
