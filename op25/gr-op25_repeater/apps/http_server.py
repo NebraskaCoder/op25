@@ -71,8 +71,6 @@ class http_server(object):
             # Serve static files from www-static for root-level requests
             if path == '' or path == 'index.html':
                 return send_from_directory('../www/www-static', 'index.html')
-            elif path in ('1x1.png', 'ald.png'):
-                return send_from_directory('../www/www-static', path)
             elif path.startswith('images/'):
                 return send_from_directory('../www/images', path[len('images/'):])
             else:
