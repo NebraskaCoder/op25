@@ -588,12 +588,12 @@ class rx_block (gr.top_block):
         if "terminal" in config:
             self.configure_terminal(config['terminal'])
 
-        # After creating protocol objects, set their parent attribute
-        # Example: self.trunking = trunked_system(...)
-        # Add after each instantiation:
+        # After creating protocol objects, set their parent attribute and print debug info
         if hasattr(self, 'trunking') and self.trunking:
+            print(f"[DEBUG] Setting parent on trunking object: {type(self.trunking)} id={id(self.trunking)}")
             self.trunking.parent = self
         if hasattr(self, 'trunk_rx') and self.trunk_rx:
+            print(f"[DEBUG] Setting parent on trunk_rx object: {type(self.trunk_rx)} id={id(self.trunk_rx)}")
             self.trunk_rx.parent = self
         # If you have other protocol objects, add similar lines here
 
