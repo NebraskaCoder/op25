@@ -68,12 +68,20 @@ class http_server(object):
         @app.route('/', defaults={'path': ''})
         @app.route('/<path:path>')
         def static_files(path):
+            # Serve static files from www-static for root-level requests
             if path == '' or path == 'index.html':
                 return send_from_directory('../www/www-static', 'index.html')
+            elif path in ('1x1.png', 'ald.png'):
+                return send_from_directory('../www/www-static', path)
             elif path.startswith('images/'):
                 return send_from_directory('../www/images', path[len('images/'):])
             else:
-                return send_from_directory('../www/www-static', path)
+                # Try www-static first, fallback to 404 if not found
+                static_dir = '../www/www-static'
+                file_path = os.path.join(static_dir, path)
+                if os.path.isfile(file_path):
+                    return send_from_directory(static_dir, path)
+                return ("Not Found", 404)
 
         @app.route('/events')
         def sse():
@@ -81,6 +89,9 @@ class http_server(object):
                 q = queue.Queue()
                 with sse_clients_lock:
                     sse_clients.add(q)
+                # Send initial connection event
+                init_event = json.dumps({"event": "connection", "message": "SSE connection established"})
+                yield f"data: {init_event}\n\n"
                 try:
                     while True:
                         data = q.get()
@@ -153,13 +164,27 @@ class http_server(object):
         try:
             if hasattr(msg, 'type') and msg.type() == -4:
                 data = json.loads(msg.to_string())
-                sse_data = json.dumps(data)
-                with sse_clients_lock:
-                    for q in list(sse_clients):
-                        try:
-                            q.put_nowait(sse_data)
-                        except queue.Full:
-                            pass
+                event_type = None
+                if isinstance(data, dict) and 'json_type' in data:
+                    jt = data['json_type']
+                    if jt == 'rx_update':
+                        event_type = 'frequency_update'
+                    elif jt == 'call_log':
+                        event_type = 'call_log'
+                    elif jt == 'channel_update':
+                        event_type = 'channel_status'
+                    elif jt == 'plot':
+                        event_type = 'plot_update'
+                    elif jt == 'trunk_update':
+                        event_type = 'trunk_update'
+                if event_type:
+                    sse_data = json.dumps({"event": event_type, "data": data})
+                    with sse_clients_lock:
+                        for q in list(sse_clients):
+                            try:
+                                q.put_nowait(sse_data)
+                            except queue.Full:
+                                pass
         except Exception:
             pass
 
