@@ -208,6 +208,7 @@ class rx_ctl(object):
         # --- UI update hook ---
         try:
             if hasattr(self, 'parent') and self.parent:
+                sys.stderr.write(f"[DEBUG] UI update hook called in smartnet.log_call: sysid={sysid}, rcvr={rcvr}, freq={freq}, tgid={tgid}, rid={rid}\n")
                 self.parent.ui_freq_update()
                 self.parent.ui_calllog_update()
         except Exception as e:

@@ -1437,6 +1437,7 @@ class p25_system(object):
         # --- UI update hook ---
         try:
             if hasattr(self, 'parent') and self.parent:
+                sys.stderr.write(f"[DEBUG] UI update hook called in update_voice_frequency: freq={frequency}, tgid={tgid}, tdma_slot={tdma_slot}, srcaddr={srcaddr}\n")
                 self.parent.ui_freq_update()
                 self.parent.ui_calllog_update()
         except Exception as e:
