@@ -1434,17 +1434,13 @@ class p25_system(object):
         curr_time = time.time()
         self.voice_frequencies[frequency]['time'] = curr_time
         self.voice_frequencies[frequency]['counter'] += 1
-        if tdma_slot is None:   # FDMA mark both slots with same info
-            if self.debug >= 10:
-                sys.stderr.write("%s [%s] VF ts ph1: tgid: %s, freq: %f\n" % (log_ts.get(), self.sysname, tgid, frequency/1000000.0))
-            for slot in [0, 1]:
-                self.voice_frequencies[frequency]['tgid'][slot] = tgid
-                self.voice_frequencies[frequency]['ts'][slot] = curr_time
-        else:                   # TDMA mark just slot in use
-            if self.debug >= 10:
-                sys.stderr.write("%s [%s] VF ts ph2: tgid: %s, freq: %f, slot: %s\n" % (log_ts.get(), self.sysname, tgid, frequency/1000000.0, tdma_slot))
-            self.voice_frequencies[frequency]['tgid'][tdma_slot] = tgid
-            self.voice_frequencies[frequency]['ts'][tdma_slot] = curr_time
+        # --- UI update hook ---
+        try:
+            if hasattr(self, 'parent') and self.parent:
+                self.parent.ui_freq_update()
+                self.parent.ui_calllog_update()
+        except Exception as e:
+            sys.stderr.write(f"[DEBUG] Exception in UI update hook: {e}\n")
 
     def expire_voice_frequencies(self, curr_time):
         if curr_time < self.last_expiry_check + EXPIRY_TIMER:

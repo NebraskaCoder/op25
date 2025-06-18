@@ -205,6 +205,13 @@ class rx_ctl(object):
                                    "tgtag": tgtag,
                                    "rid":   rid,
                                    "rtag":  rtag })
+        # --- UI update hook ---
+        try:
+            if hasattr(self, 'parent') and self.parent:
+                self.parent.ui_freq_update()
+                self.parent.ui_calllog_update()
+        except Exception as e:
+            sys.stderr.write(f"[DEBUG] Exception in UI update hook (smartnet): {e}\n")
 
 #################
 # Smartnet control channel class

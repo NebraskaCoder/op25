@@ -262,7 +262,7 @@ class trunked_system (object):
                 return (freq, 1)
         return (None, None)
 
-    def update_voice_frequency(self, frequency, tgid=None, tdma_slot=None, srcaddr=0):
+    def update_voice_frequency(self, frequency, tgid=None, tdma_slot=None, srcaddr=None, svcopts=None):
         if not frequency:    # e.g., channel identifier not yet known
             return
         prev_freq, prev_slot = self.find_voice_freq(tgid)
@@ -291,6 +291,13 @@ class trunked_system (object):
         else:                   # TDMA mark just slot in use
             self.voice_frequencies[frequency]['tgid'][tdma_slot] = tgid
             self.voice_frequencies[frequency]['ts'][tdma_slot] = curr_time
+        # --- UI update hook ---
+        try:
+            if hasattr(self, 'parent') and self.parent:
+                self.parent.ui_freq_update()
+                self.parent.ui_calllog_update()
+        except Exception as e:
+            sys.stderr.write(f"[DEBUG] Exception in UI update hook (trunking): {e}\n")
 
     def expire_voice_frequencies(self, curr_time, curr_tgid):
         for frequency in self.voice_frequencies:
