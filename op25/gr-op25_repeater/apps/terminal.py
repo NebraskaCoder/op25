@@ -566,7 +566,7 @@ class http_terminal(threading.Thread):
         self.output_q = output_q
         self.endpoint = endpoint
         self.keep_running = True
-        self.server = http_server(self.output_q, self.input_q, self.endpoint)
+        self.server = http_server(self.input_q, self.output_q, self.endpoint)
         self.start()
 
     def get_terminal_type(self):
