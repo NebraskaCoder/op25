@@ -676,6 +676,7 @@ class p25_system(object):
         return updated
 
     def decode_tsbk(self, m_rxid, tsbk):
+        sys.stderr.write(f"[DEBUG] decode_tsbk called: m_rxid={m_rxid}, tsbk={tsbk}\n")
         self.cc_timeouts = 0
         self.last_tsbk = time.time()
         self.stats['tsbk_count'] += 1
@@ -993,6 +994,7 @@ class p25_system(object):
         return self.update_talkgroup_srcaddr(curr_time, ga, sa)
 
     def decode_tdma_msg(self, m_rxid, msg, curr_time):
+        sys.stderr.write(f"[DEBUG] decode_tdma_msg called: m_rxid={m_rxid}, msg={msg}, curr_time={curr_time}\n")
         updated = 0
         self.cc_timeouts = 0
         self.last_tsbk = time.time()
