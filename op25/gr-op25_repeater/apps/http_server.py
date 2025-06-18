@@ -25,6 +25,7 @@ import json
 import threading
 from flask import Flask, Response, request, send_from_directory
 import queue
+from flask_cors import CORS
 
 my_input_q = None
 my_output_q = None
@@ -49,6 +50,7 @@ class http_server(object):
         my_port = int(port)
         my_recv_q = queue.Queue()
         self.app = Flask(__name__)
+        CORS(self.app)  # Enable CORS for all routes
         self._setup_routes()
         self.keep_running = True
         self.sse_queue = queue.Queue()
