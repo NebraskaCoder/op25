@@ -1047,6 +1047,21 @@ class rx_main(object):
         self.q_watcher = du_queue_watcher(self.tb.ui_out_q, self.process_qmsg)
         sys.stderr.write('python version detected: %s\n' % sys.version)
 
+        # Add watcher for HTTP/web UI commands
+        def http_command_watcher(q, handler):
+            import threading
+            import time
+            def run():
+                while True:
+                    if not q.empty_p():
+                        msg = q.delete_head()
+                        handler(msg)
+                    else:
+                        time.sleep(0.05)
+            t = threading.Thread(target=run, daemon=True)
+            t.start()
+        http_command_watcher(self.tb.ui_out_q, self.tb.process_qmsg)
+
     def process_qmsg(self, msg):
         if msg is None or self.tb.process_qmsg(msg):
             self.tb.stop()
