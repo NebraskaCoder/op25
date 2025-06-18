@@ -586,7 +586,14 @@ class rx_block (gr.top_block):
             self.trunk_rx.post_init()
 
         if "terminal" in config:
-            self.configure_terminal(config['terminal'])
+            terminal_type = config['terminal'].get('terminal_type', 'curses')
+            self.terminal = op25_terminal(self.ui_in_q, self.ui_out_q, terminal_type)
+            self.terminal_type = self.terminal.get_terminal_type()
+            self.terminal_config = config
+            self.curses_plot_interval = float(from_dict(config, 'curses_plot_interval', 0.0))
+            self.http_plot_interval = float(from_dict(config, 'http_plot_interval', 1.0))
+            self.http_plot_directory = str(from_dict(config, 'http_plot_directory', "../www/images"))
+            self.ui_timeout = float(from_dict(config, 'terminal_timeout', 5.0))
 
         # After creating protocol objects, set their parent attribute and print debug info
         if hasattr(self, 'trunking') and self.trunking:
