@@ -107,6 +107,7 @@ class http_server(object):
         global my_input_q, my_output_q
         try:
             data = request.get_json(force=True)
+            print("HTTP POST received:", data)
             for d in data:
                 msg = self._make_gr_message(d)
                 if hasattr(my_output_q, 'full_p'):
