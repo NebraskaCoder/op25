@@ -906,10 +906,13 @@ class rx_block (gr.top_block):
         print("[DEBUG] ui_calllog_update called")
         if self.trunking is None or self.trunk_rx is None:
             return False
-        msg = gr.message().make_from_string(self.trunk_rx.get_call_log(), -4, 0, 0)
-        if not self.ui_in_q.full_p():
-            print("[DEBUG] ui_calllog_update writing to ui_in_q")
-            self.ui_in_q.insert_tail(msg)
+        log = self.trunk_rx.get_call_log()
+        if log:
+            js = json.dumps(log)
+            msg = gr.message().make_from_string(js, -4, 0, 0)
+            if not self.ui_in_q.full_p():
+                self.ui_in_q.insert_tail(msg)
+        return True
 
     def ui_freq_update(self):
         print("[DEBUG] ui_freq_update called")
@@ -917,19 +920,12 @@ class rx_block (gr.top_block):
             return False
         params = json.loads(self.trunk_rx.get_chan_status())   # extract data from all channels
         for rx_id in params['channels']:
-            params[rx_id]['ppm'] = self.find_channel(int(rx_id)).device.get_ppm()
-            params[rx_id]['capture'] = False if self.find_channel(int(rx_id)).raw_sink is None else True
-            params[rx_id]['error'] = self.find_channel(int(rx_id)).get_error()
-            s_name = params[rx_id]['stream']
-            if s_name not in self.meta_streams:
-                continue
-            meta_s, meta_q = self.meta_streams[s_name]
-            params[rx_id]['stream_url'] = meta_s.get_url()
+            params[rx_id]['ppm'] = self.find_channel(rx_id).ppm
         js = json.dumps(params)
         msg = gr.message().make_from_string(js, -4, 0, 0)
         if not self.ui_in_q.full_p():
-            print("[DEBUG] ui_freq_update writing to ui_in_q:", js)
             self.ui_in_q.insert_tail(msg)
+        return True
 
     def ui_plot_update(self):
         print("[DEBUG] ui_plot_update called")
