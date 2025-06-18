@@ -29,7 +29,6 @@ from flask_cors import CORS
 
 my_input_q = None
 my_output_q = None
-my_recv_q = None
 my_port = None
 
 # SSE connection management
@@ -43,12 +42,11 @@ TODO: make less fake
 
 class http_server(object):
     def __init__(self, input_q, output_q, endpoint, **kwds):
-        global my_input_q, my_output_q, my_recv_q, my_port
+        global my_input_q, my_output_q, my_port
         host, port = endpoint.split(':')
-        my_input_q = input_q
+        my_input_q = input_q  # This is ui_out_q from multi_rx.py
         my_output_q = output_q
         my_port = int(port)
-        my_recv_q = queue.Queue()
         self.app = Flask(__name__)
         CORS(self.app)  # Enable CORS for all routes
         self._setup_routes()
@@ -58,7 +56,7 @@ class http_server(object):
         self.sse_thread.start()
         self.flask_thread = threading.Thread(target=self._run_flask, daemon=True)
         self.flask_thread.start()
-        # Start a watcher to move messages from input_q to my_recv_q and SSE
+        # Start a watcher to broadcast SSE events from my_input_q
         self.q_watcher = threading.Thread(target=self._input_q_watcher, daemon=True)
         self.q_watcher.start()
 
@@ -106,7 +104,7 @@ class http_server(object):
             return self._handle_post()
 
     def _handle_post(self):
-        global my_input_q, my_output_q, my_recv_q
+        global my_input_q, my_output_q
         try:
             data = request.get_json(force=True)
             for d in data:
@@ -120,10 +118,10 @@ class http_server(object):
         except Exception as e:
             sys.stderr.write(f'post_req: error processing input: {e}\n')
         resp_msg = []
-        # Drain my_recv_q for responses
+        # Drain my_input_q for responses
         while True:
             try:
-                msg = my_recv_q.get_nowait()
+                msg = my_input_q.get_nowait()
                 if hasattr(msg, 'type') and msg.type() == -4:
                     resp_msg.append(json.loads(msg.to_string()))
                 elif isinstance(msg, dict):
@@ -140,19 +138,17 @@ class http_server(object):
         self.app.run(host='0.0.0.0', port=my_port, threaded=True, use_reloader=False)
 
     def _input_q_watcher(self):
-        global my_input_q, my_recv_q
+        global my_input_q
         while self.keep_running:
             try:
                 if hasattr(my_input_q, 'empty_p'):
                     if not my_input_q.empty_p():
                         msg = my_input_q.delete_head()
-                        my_recv_q.put(msg)
                         self._broadcast_sse(msg)
                     else:
                         time.sleep(0.01)
                 else:
                     msg = my_input_q.get(timeout=0.1)
-                    my_recv_q.put(msg)
                     self._broadcast_sse(msg)
             except Exception:
                 time.sleep(0.01)
