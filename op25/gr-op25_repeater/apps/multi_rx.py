@@ -1050,19 +1050,20 @@ class rx_main(object):
         sys.stderr.write('python version detected: %s\n' % sys.version)
 
         # Add watcher for HTTP/web UI commands
-        def http_command_watcher(q, handler):
-            import threading
-            import time
-            def run():
-                while True:
-                    if not q.empty_p():
-                        msg = q.delete_head()
-                        handler(msg)
+        def ui_command_watcher():
+            while self.keep_running:
+                try:
+                    if not self.tb.ui_out_q.empty_p():
+                        msg = self.tb.ui_out_q.delete_head()
+                        print("[DEBUG] ui_command_watcher got msg:", getattr(msg, 'to_string', lambda: str(msg))())
+                        self.tb.process_qmsg(msg)
                     else:
                         time.sleep(0.05)
-            t = threading.Thread(target=run, daemon=True)
-            t.start()
-        http_command_watcher(self.tb.ui_out_q, self.tb.process_qmsg)
+                except Exception as e:
+                    print("[DEBUG] ui_command_watcher exception:", e)
+                    time.sleep(0.1)
+        self.ui_command_thread = threading.Thread(target=ui_command_watcher, daemon=True)
+        self.ui_command_thread.start()
 
     def process_qmsg(self, msg):
         if msg is None or self.tb.process_qmsg(msg):
