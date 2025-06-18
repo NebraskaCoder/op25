@@ -148,11 +148,13 @@ class http_server(object):
                 if hasattr(my_input_q, 'empty_p'):
                     if not my_input_q.empty_p():
                         msg = my_input_q.delete_head()
+                        print("[DEBUG] http_server: got msg from queue:", getattr(msg, 'to_string', lambda: str(msg))())
                         self._broadcast_sse(msg)
                     else:
                         time.sleep(0.01)
                 else:
                     msg = my_input_q.get(timeout=0.1)
+                    print("[DEBUG] http_server: got msg from queue (no empty_p):", getattr(msg, 'to_string', lambda: str(msg))())
                     self._broadcast_sse(msg)
             except Exception:
                 time.sleep(0.01)
@@ -162,6 +164,7 @@ class http_server(object):
         try:
             if hasattr(msg, 'type') and msg.type() == -4:
                 data = json.loads(msg.to_string())
+                print("[DEBUG] http_server: broadcasting SSE event:", data)
                 event_type = None
                 if isinstance(data, dict) and 'json_type' in data:
                     jt = data['json_type']
