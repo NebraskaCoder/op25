@@ -93,9 +93,6 @@ class http_server(object):
         @app.route('/', methods=['POST'])
         def post_root():
             return self._handle_post()
-        @app.route('', methods=['POST'])
-        def post_root2():
-            return self._handle_post()
 
     def _handle_post(self):
         global my_input_q, my_output_q, my_recv_q
