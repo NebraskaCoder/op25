@@ -2620,3 +2620,12 @@ document
     document.documentElement.style.setProperty("--values", this.value);
     saveSettingsToLocalStorage();
   });
+
+// Add event listener for SSE toggle after page load
+window.addEventListener("load", function () {
+  document.getElementById("sseToggle").addEventListener("change", function () {
+    sseEnabled = this.checked;
+    toggleSSE();
+    saveSettingsToLocalStorage();
+  });
+});
