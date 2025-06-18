@@ -920,7 +920,7 @@ class rx_block (gr.top_block):
             return False
         params = json.loads(self.trunk_rx.get_chan_status())   # extract data from all channels
         for rx_id in params['channels']:
-            params[rx_id]['ppm'] = self.find_channel(rx_id).ppm
+            params[str(rx_id)]['ppm'] = self.find_channel(int(rx_id)).ppm
         js = json.dumps(params)
         msg = gr.message().make_from_string(js, -4, 0, 0)
         if not self.ui_in_q.full_p():
