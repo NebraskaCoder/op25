@@ -589,6 +589,10 @@ class rx_block (gr.top_block):
         if "terminal" in config:
             terminal_type = config['terminal'].get('terminal_type', 'curses')
             self.terminal = op25_terminal(self.ui_in_q, self.ui_out_q, terminal_type)
+            print("[DEBUG] multi_rx.py: ui_in_q id:", id(self.ui_in_q))
+            print("[DEBUG] multi_rx.py: ui_out_q id:", id(self.ui_out_q))
+            print("[DEBUG] multi_rx.py: terminal.input_q id:", id(self.terminal.input_q))
+            print("[DEBUG] multi_rx.py: terminal.output_q id:", id(self.terminal.output_q))
             self.terminal_type = self.terminal.get_terminal_type()
             self.terminal_config = config
             self.curses_plot_interval = float(from_dict(config, 'curses_plot_interval', 0.0))
@@ -933,6 +937,7 @@ class rx_block (gr.top_block):
 
     def ui_freq_update(self):
         print("[DEBUG] ui_freq_update called")
+        print("[DEBUG] ui_freq_update: ui_in_q id:", id(self.ui_in_q))
         if self.trunking is None or self.trunk_rx is None:
             return False
         params = json.loads(self.trunk_rx.get_chan_status())   # extract data from all channels
@@ -948,6 +953,7 @@ class rx_block (gr.top_block):
 
     def ui_plot_update(self):
         print("[DEBUG] ui_plot_update called")
+        print("[DEBUG] ui_plot_update: ui_in_q id:", id(self.ui_in_q))
         if self.terminal_type is None or self.terminal_type != "http":
             return
         filenames = []
