@@ -588,6 +588,15 @@ class rx_block (gr.top_block):
         if "terminal" in config:
             self.configure_terminal(config['terminal'])
 
+        # After creating protocol objects, set their parent attribute
+        # Example: self.trunking = trunked_system(...)
+        # Add after each instantiation:
+        if hasattr(self, 'trunking') and self.trunking:
+            self.trunking.parent = self
+        if hasattr(self, 'trunk_rx') and self.trunk_rx:
+            self.trunk_rx.parent = self
+        # If you have other protocol objects, add similar lines here
+
     def set_debug(self, dbglvl):
         self.verbosity = dbglvl
         for ch in self.channels:
