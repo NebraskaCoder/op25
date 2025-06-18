@@ -825,12 +825,81 @@ class rx_block (gr.top_block):
         if (msgq_id >= 0 and msgq_id < len(self.channels)) and self.channels[msgq_id].nbfm is not None:
             self.channels[msgq_id].nbfm.control(action)
 
-    def process_qmsg(self, msg):            # Handle UI requests
+    def process_qmsg(self, msg):
         print("[DEBUG] process_qmsg called with:", msg.to_string())
         RX_COMMANDS = 'skip lockout hold whitelist reload'.split()
-        if msg is None or self.tb.process_qmsg(msg):
-            self.tb.stop()
-            self.keep_running = False
+        if msg is None:
+            return True
+        s = msg.to_string()
+        if type(s) is not str and isinstance(s, bytes):
+            s = s.decode()
+        if s == 'quit':
+            return True
+        elif s == 'update':
+            self.ui_last_update = time.time()
+            self.ui_freq_update()
+            self.ui_calllog_update()
+            if self.trunking is None or self.trunk_rx is None:
+                return False
+            js = self.trunk_rx.to_json()
+            msg = gr.message().make_from_string(js, -4, 0, 0)
+            if not self.ui_in_q.full_p():
+                self.ui_in_q.insert_tail(msg)
+            self.ui_plot_update()
+        elif s == 'toggle_plot':
+            if not self.get_interactive():
+                sys.stderr.write("%s Cannot start plots for non-realtime (replay) sessions\n" % log_ts.get())
+                return
+            plot_type = int(msg.arg1())
+            msgq_id = int(msg.arg2())
+            self.find_channel(msgq_id).toggle_plot(plot_type)
+        elif s == 'adj_tune':
+            freq = msg.arg1()
+            msgq_id = int(msg.arg2())
+            self.find_channel(msgq_id).adj_tune(freq)
+        elif s == 'set_debug':
+            dbglvl = int(msg.arg1())
+            self.set_debug(dbglvl)
+        elif s == 'get_terminal_config':
+            if self.terminal is not None and self.terminal_config is not None:
+                self.terminal_config['json_type'] = "terminal_config"
+                js = json.dumps(self.terminal_config)
+                msg = gr.message().make_from_string(js, -4, 0, 0)
+                if not self.ui_in_q.full_p():
+                    self.ui_in_q.insert_tail(msg)
+            else:
+                return False
+        elif s == 'get_full_config':
+            cfg = self.config
+            cfg['json_type'] = "full_config"
+            js = json.dumps(cfg)
+            msg = gr.message().make_from_string(js, -4, 0, 0)
+            if not self.ui_in_q.full_p():
+                self.ui_in_q.insert_tail(msg)
+        elif s == 'set_full_config':
+            pass
+        elif s == 'dump_tgids':
+            self.trunk_rx.dump_tgids()
+        elif s == 'capture':
+            if not self.get_interactive():
+                sys.stderr.write("%s Cannot start capture for non-realtime (replay) sessions\n" % log_ts.get())
+                return
+            msgq_id = int(msg.arg2())
+            self.find_channel(msgq_id).toggle_capture()
+        elif s == 'dump_buffer':
+            for chan in self.channels:
+                chan.decoder.control(json.dumps({'tuner': chan.msgq_id, 'cmd': 'dump_buffer'}))
+        elif s == 'watchdog':
+            if self.ui_last_update > 0 and (time.time() > (self.ui_last_update + self.ui_timeout)):
+                self.ui_last_update = 0
+                sys.stderr.write("%s UI Timeout\n" % log_ts.get())
+                for chan in self.channels:
+                    chan.close_plots()
+            for chan in self.channels:
+                chan.error_tracking()
+        elif s in RX_COMMANDS:
+            if self.trunking is not None and self.trunk_rx is not None:
+                self.trunk_rx.ui_command(s, msg.arg1(), msg.arg2())
         return False
 
     def ui_calllog_update(self):
