@@ -51,6 +51,7 @@ import json
 import traceback
 import osmosdr
 import importlib
+from terminal import op25_terminal
 
 from gnuradio import audio, eng_notation, gr, filter, blocks, fft, analog, digital
 from gnuradio.eng_option import eng_option
