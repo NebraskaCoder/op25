@@ -118,15 +118,18 @@ class http_server(object):
         except Exception as e:
             sys.stderr.write(f'post_req: error processing input: {e}\n')
         resp_msg = []
-        # Drain my_input_q for responses
+        # Drain my_input_q for responses using GNU Radio msg_queue methods
         while True:
             try:
-                msg = my_input_q.get_nowait()
+                if not my_input_q.empty_p():
+                    msg = my_input_q.delete_head()
+                else:
+                    break
                 if hasattr(msg, 'type') and msg.type() == -4:
                     resp_msg.append(json.loads(msg.to_string()))
                 elif isinstance(msg, dict):
                     resp_msg.append(msg)
-            except queue.Empty:
+            except Exception:
                 break
         return Response(json.dumps(resp_msg), mimetype='application/json')
 
